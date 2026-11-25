@@ -1,0 +1,41 @@
+# Operating System files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE & Editor files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+*.swp
+*.swo
+*~
+
+# Environment & Secrets
+.env
+.env.*
+*.local
+*.key
+*.pem
+
+# Build & Compiled outputs (future implementation)
+target/
+build/
+out/
+dist/
+bin/
+*.class
+*.jar
+*.war
+*.ear
+__pycache__/
+*.pyc
+node_modules/
+
+# Logs & Temporary files
+*.log
+logs/
+tmp/
+temp/
