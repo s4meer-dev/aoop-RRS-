@@ -1,15 +1,10 @@
-# `src/waitlist` — Waitlist & RAC Bounded Context (Unit 7)
+# `src/waitlist` — Waitlist & RAC Bounded Context (`com.irctc.rrs.waitlist`)
 
-> **Status:** Planned module placeholder (Phase 2).
+Strictly encapsulated **Spring Modulith** module (`WaitlistService` public contract):
 
-## Planned Components
-- **Contiguous Queue Data Structures:**
-  - `ContiguousQueue` maintaining zero-gap indices `1..N` for `RAC` and `WL` per `(Train, Date, Class, Quota)`.
-  - `WaitlistEntry` linking `ticketId`, `queueType` (`RAC` or `WL`), and `contiguousPosition`.
-- **Cascading Upgrade Engine (Slide 6):**
-  - `WaitlistUpgradeService`:
-    - On `CNF` cancellation → promotes `RAC #1` to `CNF`, shifts `RAC` queue up by 1, promotes `WL #1` to `RAC`, shifts `WL` queue up by 1.
-    - On `RAC` cancellation → removes slot, shifts `RAC` queue up by 1, promotes `WL #1` to `RAC`, shifts `WL` queue up by 1.
-    - On `WL` cancellation → removes entry and shifts `WL` queue up by 1.
-- **Audit Trail:**
-  - `PromotionAuditLog` recording every automated upgrade for PNR status transparency.
+- **`ContiguousQueue`:** Guarantees strictly contiguous `1..N` indexing on every enqueue, promotion, or cancellation for both `RAC` and `WL`.
+- **Atomic Cascading Upgrades (`WaitlistServiceImpl`):**
+  - `CNF` cancel → promotes `RAC #1 -> CNF`, shifts `RAC` queue up by 1, promotes `WL #1 -> RAC`, shifts `WL` queue up by 1.
+  - `RAC` cancel → shifts `RAC`, promotes `WL #1 -> RAC`, shifts `WL`.
+  - `WL` cancel → removes entry and shifts `WL`.
+- **`PromotionAuditEntry`:** Logs automated transitions for UI & verification.

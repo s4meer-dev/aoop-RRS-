@@ -1,9 +1,8 @@
-# `src/common` — Shared Kernel
+# `src/common` — Shared Kernel (`com.irctc.rrs.common`)
 
-> **Status:** Planned module placeholder (Phase 1).
+Exposed as an `OPEN` Spring Modulith shared kernel across all bounded contexts:
 
-## Planned Components
-- **Value Objects:** `PnrNumber`, `TrainNumber`, `StationCode`, `Money`, `CoachClass`, `QuotaCode`, `BerthPreference`.
-- **Concurrency Utilities:** `PartitionKey` `(Train, Date, Class, Quota)` and `PartitionLockManager` interface.
-- **Domain Events & Exceptions:** Base `DomainEvent`, `QuotaEligibilityException`, `SeatHoldExpiredException`, `SystemBusyException`.
-- **Clock & ID Providers:** Testable `TimeProvider` and `IdGenerator` abstractions so Tatkal 10 AM windows and hold TTLs can be tested deterministically.
+- **Value Objects (`common.model`):** `Money`, `PartitionKey`, `CoachClass`, `QuotaCode`, `BerthType`, `BerthPreference`, `Gender`, `TicketStatus`.
+- **Concurrency (`common.concurrency`):** `PartitionLockManager` providing fair per-`(Train, Date, Class, Quota)` `ReentrantLock` execution.
+- **Abstractions (`common.time`, `common.id`):** `TimeProvider` (`SystemTimeProvider`) and `IdGenerator` (`DefaultIdGenerator`).
+- **Events & Exceptions (`common.events`, `common.exception`):** `BerthFreedEvent`, `TicketUpgradedEvent`, `PaymentReconciledEvent`, `RefundTriggeredEvent`, and structured `RrsException` subclasses (`400`, `404`, `409`, `429`, `503`).

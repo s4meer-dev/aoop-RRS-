@@ -1,16 +1,8 @@
-# `src/booking` — Booking Bounded Context (Unit 7) & Backpressure Gate (Unit 6)
+# `src/booking` — Booking Context & Tatkal Backpressure Gate (`com.irctc.rrs.booking`)
 
-> **Status:** Planned module placeholder (Phase 1–3).
+Strictly encapsulated **Spring Modulith** orchestrating context (`BookingService` & `BookingRequestBuilder` public; internals hidden under `internal`):
 
-## Planned Components
-- **10 AM Rush Backpressure (`Unit 6`):**
-  - `TatkalAdmissionGate`: Rate limiter + fixed-capacity **Bounded Queue** + throttled worker thread pool.
-  - Sheds extreme overflow gracefully (`SystemBusyException` / `503 Retry-After`) without crashing the JVM/process.
-- **Request Assembly (`Builder Pattern`):**
-  - `BookingRequest` (immutable validated input)
-  - `BookingRequestBuilder` (fluent step-by-step builder enforcing 1–6 passenger limit and route/age validation).
-- **Ticket Lifecycle (`State Pattern`):**
-  - `Ticket` & `BookingPnr` aggregates
-  - `TicketState` interface → `InitiatedState`, `PaymentPendingState`, `WaitlistedState`, `RacState`, `ConfirmedState`, `ChartedState`, `CancelledState`, `ExpiredState`.
-- **Orchestration (`Abstraction`):**
-  - `BookingOrchestrator` coordinating Hold → Payment → Commit/Waitlist → Cancellation without leaking internal locks or gateway details.
+- **Unit 6 Admission Gate (`TatkalAdmissionGate`):** `Bucket4j` per-user token buckets (`429`) + bounded `ArrayBlockingQueue` & fixed worker pool (`503 Retry-After`) + `Resilience4j Bulkhead` + `LMAX Disruptor` telemetry (`BookingTelemetryDisruptor`).
+- **Builder Pattern:** `BookingRequestBuilder` assembling validated immutable `BookingRequest`s.
+- **State Pattern (`booking.internal.state`):** `Ticket` delegating transitions to `InitiatedState`, `PaymentPendingState`, `WaitlistedState`, `RacState`, `ConfirmedState`, `ChartedState`, `CancelledState`, and `ExpiredState`.
+- **Orchestrator & Web Layer:** `BookingOrchestrator`, `ReservationController` (`/api/v1/**`), and `GlobalExceptionHandler`.

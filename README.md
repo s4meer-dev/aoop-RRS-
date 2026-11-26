@@ -3,7 +3,7 @@
 > **High-Concurrency Seat Booking, Quota Allocation & Tatkal Load Management**
 >
 > **Project Focus:** Software Engineering & Advanced Object-Oriented Programming (AOOP)  
-> **Project Status:** Phase 0 — Idea Framing, System Architecture & Project Structure *(Implementation starts next)*
+> **Project Status:** Implemented — Spring Boot 3.5 + Spring Modulith 1.4 + Java 21 (JDK 25 Verified) + Interactive Control Center UI
 
 ---
 
@@ -116,26 +116,38 @@ stateDiagram-v2
 
 ```text
 aoop-RRS-/
-├── README.md                                 # Project overview, diagrams & navigation
-├── .gitignore                                # Repository ignore rules
-├── docs/                                     # Complete Idea Framing, Architecture & Flowcharts
-│   ├── 01-ppt-analysis-and-vision.md         # Slide-by-slide PPT breakdown & Problem→Solution map
-│   ├── 02-system-architecture.md             # Bounded Contexts (U7) & Tatkal Backpressure (U6)
-│   ├── 03-oop-and-design-patterns.md         # 4 OOP Pillars + Strategy, State & Builder diagrams
-│   ├── 04-ticket-lifecycle-and-waitlist.md   # WL → RAC → CNF & contiguous queue shift flowcharts
-│   ├── 05-fault-tolerant-payments.md         # Idempotency, timeout reconciliation & auto-refunds (U5)
-│   ├── 06-domain-data-model.md               # Entities, ER diagram & service data ownership
-│   └── 07-project-structure-and-roadmap.md   # Codebase package blueprint & phased implementation plan
-├── src/                                      # Planned source layout (module stubs only; code next)
-│   ├── README.md                             # Source architecture & dependency rules
-│   ├── common/README.md                      # Shared errors, value objects & concurrency primitives
-│   ├── inventory/README.md                   # Train, coach, berth, quota pools & charting
-│   ├── booking/README.md                     # Booking orchestration, backpressure & state machine
-│   ├── waitlist/README.md                    # Contiguous RAC & WL queue upgrade engine
-│   └── payment/README.md                     # Idempotent payments, reconciliation & compensation
-└── tests/
-    └── README.md                             # Planned unit, concurrency & invariant test suite
+├── pom.xml                                   # Maven build (Spring Boot, Modulith, Resilience4j, Bucket4j, Caffeine, Disruptor)
+├── Dockerfile & docker-compose.yml           # Optional Prometheus + Grafana observability container stack
+├── monitoring/prometheus.yml                 # Actuator Prometheus scrape configuration
+├── docs/                                     # Complete Framing, Architecture, Flowcharts & Ecosystem Docs (01–08)
+├── src/main/java/com/irctc/rrs/
+│   ├── RailwayReservationApplication.java    # Application entry point
+│   ├── common/                               # Shared Kernel (Money, PartitionLockManager, Events, Exceptions)
+│   ├── inventory/                            # Bounded Context 1: Coaches, Berths, Quota Strategies & Caffeine Holds
+│   ├── waitlist/                             # Bounded Context 2: Contiguous RAC & WL Cascading Upgrade Engine
+│   ├── payment/                              # Bounded Context 3: Idempotency Ledger, Timeout Reconciler & Saga Refunds
+│   └── booking/                              # Bounded Context 4: Builder, TicketState, U6 Backpressure Gate & REST API
+├── src/main/resources/
+│   ├── application.yml                       # Tunable queue capacity, worker pool, hold TTL & reconciliation settings
+│   ├── data/indian-railways-trains.json      # Real train catalog extracted from datameet/railways
+│   └── static/index.html                     # Interactive IRCTC & 10 AM Tatkal Control Center UI
+├── src/test/java/com/irctc/rrs/              # Spring Modulith verification, unit, cascade, payment & concurrency tests
+└── tests/load/tatkal-surge.k6.js             # Grafana k6 load test simulating 10 AM Tatkal spike
 ```
+
+---
+
+## Quick Start
+
+```bash
+# Run full unit, Spring Modulith boundary, payment Saga, and concurrency tests
+mvn test
+
+# Start the reservation engine + live Control Center UI
+mvn spring-boot:run
+```
+
+Once running, open **http://localhost:8080** in your browser for the interactive **IRCTC & Tatkal Control Center** (live berth grid, cancellation cascades, payment timeout reconciliation, and 10 AM Tatkal Surge Simulator).
 
 ---
 
@@ -152,14 +164,15 @@ Read the design documents in order for the complete framing of the project:
 | 05 | [Fault-Tolerant Payments (Unit 5)](docs/05-fault-tolerant-payments.md) | Idempotency keys, bank timeout reconciliation & Saga-style automatic refund compensation |
 | 06 | [Domain Data Model](docs/06-domain-data-model.md) | Complete ER diagram, quota-pool breakdown & per-context data ownership rules |
 | 07 | [Project Structure & Implementation Roadmap](docs/07-project-structure-and-roadmap.md) | Package dependency diagram, folder responsibilities, Units 1–7 alignment & build phases |
+| 08 | [Integrated Open-Source Ecosystem](docs/08-reference-ecosystem.md) | All integrated libraries & datasets (`Spring Modulith`, `Resilience4j`, `Bucket4j`, `Disruptor`, `Caffeine`, `k6`, `datameet/railways`) |
 
 ---
 
-## Roadmap Snapshot
+## Implementation Status
 
-1. **Phase 0 — Idea Framing & Architecture Structure *(Current)***: Complete PPT analysis, diagrams, flowcharts, OOP blueprint, and clean repository organization.
-2. **Phase 1 — Core Domain & OOP Foundations**: Implement entities, value objects, Builder, and Quota/Fare Strategy classes.
-3. **Phase 2 — State Machine & Contiguous Waitlist Engine**: Implement `WL` / `RAC` / `CNF` transitions and gap-free cascade promotions.
-4. **Phase 3 — High-Concurrency & Tatkal Backpressure (U6)**: Add bounded request queues, throttling worker pool, and partitioned locking.
-5. **Phase 4 — Fault-Tolerant Payment & Reconciliation (U5)**: Add idempotency ledger, timeout reconciler, and refund compensation.
-6. **Phase 5 — Integration, Stress Simulation & Verification**: Simulate 10 AM Tatkal surges and verify zero double-bookings and zero queue gaps.
+- **Phase 0 — Idea Framing & Structure:** Completed
+- **Phase 1 — Core Domain, OOP, Builder & Quota Strategies:** Completed (`Coach`, `Berth`, `QuotaStrategy`, `BookingRequestBuilder`)
+- **Phase 2 — State Machine & Contiguous Waitlist Engine:** Completed (`TicketState`, `ContiguousQueue`, zero-gap cascade upgrades)
+- **Phase 3 — High-Concurrency & Tatkal Backpressure (U6):** Completed (`PartitionLockManager`, `TatkalAdmissionGate`, `Bucket4j`, `Resilience4j`, `LMAX Disruptor`, `Caffeine`)
+- **Phase 4 — Fault-Tolerant Payments & Reconciliation (U5):** Completed (`IdempotencyLedger`, `PaymentReconciliationWorker`, Saga `Refund`)
+- **Phase 5 — Interactive UI, Integration Tests & Surge Verification:** Completed (`static/index.html`, JUnit 5 + Spring Modulith tests, `tatkal-surge.k6.js`)

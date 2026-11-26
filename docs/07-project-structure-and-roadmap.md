@@ -1,12 +1,12 @@
 # 07 — Project Structure & Phased Implementation Roadmap
 
-> **In simple words:** This document is the master folder map and step-by-step build plan. Right now (**Phase 0**), we have finalized the entire design, architecture, diagrams, and directory structure so that when implementation starts, development across modules can move forward cleanly without stepping on each other's code.
+> **In simple words:** This document is the master folder map and build plan. Every module under `src/main/java/com/irctc/rrs/` corresponds to an isolated **Unit 7 Bounded Context** verified programmatically by **Spring Modulith**.
 
 ---
 
 ## 1. Module Dependency Architecture (Zero Circular Dependencies)
 
-Every module inside `src/` maps directly to **Unit 7 (Bounded Contexts)** plus a small `common` shared kernel:
+Every package under `com.irctc.rrs` maps directly to **Unit 7 (Bounded Contexts)** plus the open `common` shared kernel:
 
 ```mermaid
 flowchart TD

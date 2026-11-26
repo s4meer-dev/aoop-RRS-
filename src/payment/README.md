@@ -1,16 +1,8 @@
-# `src/payment` — Fault-Tolerant Payment Bounded Context (Unit 5 & Unit 7)
+# `src/payment` — Fault-Tolerant Payment Context (`com.irctc.rrs.payment`)
 
-> **Status:** Planned module placeholder (Phase 4).
+Strictly encapsulated **Spring Modulith** module implementing Unit 5 safeguards (`PaymentService` public contract):
 
-## Planned Components
-- **Idempotency Safeguard:**
-  - `IdempotencyLedger` storing unique `Idempotency-Key` records so duplicate clicks or network retries return cached outcomes without double charging.
-- **Gateway Abstraction (`Abstraction`):**
-  - `PaymentGateway` interface + `SimulatedBankGateway` (supports configurable latency & timeout injection for testing).
-- **Timeout Reconciliation:**
-  - `PaymentReconciliationWorker` polling `TIMEOUT_PENDING` records and resolving them cleanly to `RECONCILED_SUCCESS` or `RECONCILED_FAILED`.
-- **Saga Compensation:**
-  - `RefundCompensationService` issuing automatic, idempotent refunds when:
-    1. Payment succeeds *after* Seat Hold TTL expired.
-    2. Passenger cancels a ticket.
-    3. Final Chart preparation drops remaining `WL` tickets.
+- **Idempotency Ledger (`PaymentServiceImpl`):** Deduplicates retries using `Idempotency-Key` and guards against amount mismatches (`PaymentConflictException`).
+- **Gateway Resilience (`SimulatedBankGateway`):** Protected by `Resilience4j` `Retry` + `CircuitBreaker`, supporting deterministic timeout & late-settlement simulation modes.
+- **Timeout Reconciliation:** Scheduled & on-demand reconciler resolving `TIMEOUT_PENDING` payments and publishing `PaymentReconciledEvent`.
+- **Saga Compensation:** Idempotent automatic refunds triggered on late post-expiry bank debits, cancellations, and chart drops.

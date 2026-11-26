@@ -1,13 +1,15 @@
-# Planned Verification & Test Strategy (`tests/`)
+# Verification & Load Testing (`src/test/` & `tests/load/`)
 
-> **Status:** Test strategy defined in Phase 0; automated test suites will be implemented alongside each phase in `src/`.
+## Automated Java Test Suites (`src/test/java/com/irctc/rrs/`)
 
-## Planned Test Suites
-
-| Suite Folder | Target Focus | Key Invariants Verified |
+| Test Class | Scope | Invariants Verified |
 | :--- | :--- | :--- |
-| `tests/unit/` | Domain entities, `Builder`, `QuotaStrategy`, `TicketState` transitions | Quota eligibility rules, illegal state transition rejection, fare calculations |
-| `tests/waitlist/` | Contiguous `WL -> RAC -> CNF` upgrade engine | Zero gaps (`1..N`) after arbitrary combinations of CNF, RAC & WL cancellations |
-| `tests/payment/` | Unit 5 fault-tolerant payment flows | Same `Idempotency-Key` charges once; timeout reconciliation resolves cleanly; late success triggers auto-refund |
-| `tests/concurrency/` | Unit 6 10 AM Tatkal rush simulation | 1,000+ concurrent booking threads produce **0 double-bookings** and graceful bounded-queue shedding |
-| `tests/integration/` | End-to-end Booking → Inventory → Waitlist → Payment → Charting | Full journey simulation from Tatkal opening to pre-departure chart preparation |
+| `ModularityVerificationTests` | Spring Modulith (U7) | Enforces acyclic bounded-context isolation across `common`, `inventory`, `waitlist`, `payment`, `booking` |
+| `QuotaStrategyAndBuilderTests` | Builder & Strategy (Slide 4) | Route/passenger validation, 10 AM AC / 11 AM Non-AC Tatkal clock gates, Ladies & Senior Citizen rules |
+| `TicketStateAndWaitlistCascadeTests` | State & Cascade (Slide 6) | Legal/illegal transitions, atomic `CNF -> RAC -> WL` upgrades with zero gaps, charting auto-refunds |
+| `FaultTolerantPaymentTests` | Payment Resilience (U5) | Idempotency-Key deduplication, timeout reconciliation to CNF, and Saga auto-refund on expired hold |
+| `TatkalConcurrencyAndBackpressureTests` | Surge & Rate Limit (U6) | Concurrent burst produces 0 double-bookings, contiguous WL invariant, bounded `503` shedding & `429` limits |
+| `ReservationApiIntegrationTests` | REST API & Actuator | Full HTTP booking, `Idempotency-Key` replay, and `/actuator/health` status check |
+
+## External Load Testing (`tests/load/`)
+- [`tatkal-surge.k6.js`](load/tatkal-surge.k6.js) — **Grafana k6** script simulating a 10:00 AM Tatkal spike (`0 -> 300 VUs`) with `Idempotency-Key` headers and zero `500` assertions.

@@ -1,18 +1,7 @@
-# `src/inventory` — Inventory Bounded Context (Unit 7)
+# `src/inventory` — Inventory Bounded Context (`com.irctc.rrs.inventory`)
 
-> **Status:** Planned module placeholder (Phase 1 & Phase 3).
+Strictly encapsulated **Spring Modulith** module (`InventoryService` public contract; domain & strategies hidden under `internal`):
 
-## Planned Components
-- **Domain Entities (`Encapsulation` & `Inheritance`):**
-  - `Train`, `JourneyInstance`
-  - Abstract `Coach` → `SleeperCoach`, `AC3TierCoach`, `AC2TierCoach`, `ChairCarCoach`
-  - `Berth` (regular vs. RAC-shareable Side-Lower)
-  - `QuotaPool` & `SeatHold` (temporary lock with TTL expiry)
-- **Quota & Fare Strategies (`Polymorphism` & `Strategy Pattern`):**
-  - `QuotaStrategy` interface
-  - `GeneralQuotaStrategy` (`GN`)
-  - `TatkalQuotaStrategy` (`TQ` — 10 AM AC / 11 AM Non-AC window + dynamic surcharge)
-  - `LadiesQuotaStrategy` (`LD`)
-  - `SeniorCitizenQuotaStrategy` (`SS`)
-- **Charting Service:**
-  - `ChartPreparationService` (freezes online bookings at `T - 4h` and publishes final passenger berth list).
+- **Entities (`Encapsulation` & `Inheritance`):** `Train`, `JourneyInstance`, abstract `Coach` (`SleeperCoach`, `AC3TierCoach`, `AC2TierCoach`, `ChairCarCoach`), `Berth`, `QuotaPool`, and `SeatHold` (managed with **Caffeine** `180s` TTL expiry).
+- **Seed Data (`datameet/railways`):** `TrainDataLoader` loads real Indian Railways trains from `src/main/resources/data/indian-railways-trains.json`.
+- **Quota Strategies (`Polymorphism` & `Strategy Pattern`):** `QuotaStrategy` implemented by `GeneralQuotaStrategy` (`GN`), `TatkalQuotaStrategy` (`TQ`), `LadiesQuotaStrategy` (`LD`), and `SeniorCitizenQuotaStrategy` (`SS`).
