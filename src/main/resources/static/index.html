@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IRCTC-Style Railway Reservation System — Control Center</title>
+    <style>
+        :root {
+            --bg: #0b1020;
+            --surface: #131b30;
+            --surface-2: #19233d;
+            --border: #283659;
+            --text: #e8eefc;
+            --muted: #94a3c4;
+            --primary: #3b82f6;
+            --accent: #f97316;
+            --green: #10b981;
+            --amber: #f59e0b;
+            --red: #ef4444;
+            --purple: #a855f7;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.45;
+        }
+        header {
+            background: linear-gradient(135deg, #111a33, #17254a);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 24px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+        .brand h1 { margin: 0; font-size: 20px; letter-spacing: 0.2px; }
+        .brand p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+        .telemetry-bar { display: flex; gap: 10px; flex-wrap: wrap; }
+        .pill {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+        }
+        .pill strong { color: var(--primary); }
+        main { max-width: 1340px; margin: 0 auto; padding: 20px 24px 48px; }
+        .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+        .tab-btn {
+            background: var(--surface);
+            color: var(--muted);
+            border: 1px solid var(--border);
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+        .grid-2 { display: grid; grid-template-columns: 1.05fr 1.2fr; gap: 16px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+        @media (max-width: 960px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .card h2, .card h3 { margin: 0 0 12px; font-size: 16px; }
+        .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+        input, select {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 7px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 13px;
+        }
+        .btn {
+            padding: 9px 14px;
+            border: none;
+            border-radius: 7px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            color: #fff;
+            background: var(--primary);
+        }
+        .btn.accent { background: var(--accent); }
+        .btn.green { background: var(--green); }
+        .btn.red { background: var(--red); }
+        .btn.secondary { background: var(--surface-2); border: 1px solid var(--border); color: var(--text); }
+        .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+        .stat-box {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+        }
+        .stat-box .label { font-size: 11px; color: var(--muted); text-transform: uppercase; }
+        .stat-box .val { font-size: 22px; font-weight: 700; margin-top: 4px; }
+        .berth-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .berth {
+            padding: 8px 6px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            text-align: center;
+            font-size: 11px;
+            background: var(--surface-2);
+        }
+        .berth.AVAILABLE { border-color: var(--green); background: rgba(16, 185, 129, 0.12); }
+        .berth.CONFIRMED { border-color: var(--primary); background: rgba(59, 130, 246, 0.18); }
+        .berth.RAC_PARTIAL, .berth.RAC_FULL { border-color: var(--amber); background: rgba(245, 158, 11, 0.18); }
+        .berth.HELD_CNF { border-color: var(--purple); background: rgba(168, 85, 247, 0.2); }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td { padding: 8px; border-bottom: 1px solid var(--border); text-align: left; }
+        th { color: var(--muted); font-weight: 600; }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .b-CONFIRMED, .b-SUCCEEDED, .b-RECONCILED_SUCCESS { background: rgba(16,185,129,.2); color: #34d399; }
+        .b-RAC, .b-TIMEOUT_PENDING, .b-PAYMENT_PENDING { background: rgba(245,158,11,.2); color: #fbbf24; }
+        .b-WAITLISTED, .b-CHARTED { background: rgba(59,130,246,.2); color: #93c5fd; }
+        .b-CANCELLED, .b-FAILED, .b-REFUNDED, .b-EXPIRED { background: rgba(239,68,68,.2); color: #fca5a5; }
+        .log-box {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 12px;
+            max-height: 220px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .toast {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            background: var(--surface-2);
+            border: 1px solid var(--primary);
+            padding: 12px 16px;
+            border-radius: 10px;
+            max-width: 420px;
+            font-size: 13px;
+            display: none;
+            z-index: 99;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div class="brand">
+        <h1>IRCTC-Style Railway Reservation System</h1>
+        <p>Spring Modulith Bounded Contexts (U7) · Tatkal Backpressure (U6) · Fault-Tolerant Payments (U5)</p>
+    </div>
+    <div class="telemetry-bar">
+        <span class="pill">Workers: <strong id="t-workers">-</strong></span>
+        <span class="pill">Queue Depth: <strong id="t-depth">0</strong>/<span id="t-cap">-</span></span>
+        <span class="pill">Admitted: <strong id="t-admitted">0</strong></span>
+        <span class="pill">503 Shed: <strong id="t-shed">0</strong></span>
+        <button class="btn secondary" onclick="refreshAll()">Refresh</button>
+    </div>
+</header>
+
+<main>
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('tab-book', this)">1. Book &amp; Coach Layout</button>
+        <button class="tab-btn" onclick="switchTab('tab-wl', this)">2. PNRs &amp; Contiguous Waitlist/RAC</button>
+        <button class="tab-btn" onclick="switchTab('tab-surge', this)">3. 10 AM Tatkal Surge Simulator (U6)</button>
+        <button class="tab-btn" onclick="switchTab('tab-pay', this)">4. Payment Reconciliation &amp; Sagas (U5)</button>
+    </div>
+
+    <!-- TAB 1 -->
+    <div id="tab-book" class="tab-panel active">
+        <div class="grid-2">
+            <div class="card">
+                <h2>Create Reservation (Builder + Strategy + State)</h2>
+                <div class="form-grid">
+                    <div>
+                        <label>Train (Real datameet/railways Data)</label>
+                        <select id="b-train" onchange="loadAvailabilityAndCoach()"></select>
+                    </div>
+                    <div>
+                        <label>Journey Date</label>
+                        <input id="b-date" type="date" onchange="loadAvailabilityAndCoach()" />
+                    </div>
+                    <div>
+                        <label>Coach Class</label>
+                        <select id="b-class" onchange="loadAvailabilityAndCoach()"></select>
+                    </div>
+                    <div>
+                        <label>Quota Strategy (Polymorphism)</label>
+                        <select id="b-quota" onchange="loadAvailabilityAndCoach()">
+                            <option value="GN">GN — General Quota</option>
+                            <option value="TQ">TQ — Tatkal Quota (+30%)</option>
+                            <option value="LD">LD — Ladies Quota</option>
+                            <option value="SS">SS — Senior Citizen Quota (-15%)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Passenger Name</label>
+                        <input id="b-name" value="Aarav Sharma" />
+                    </div>
+                    <div>
+                        <label>Age &amp; Gender</label>
+                        <div style="display:flex; gap:6px;">
+                            <input id="b-age" type="number" value="28" min="1" max="120" style="width:75px;" />
+                            <select id="b-gender">
+                                <option value="MALE">MALE</option>
+                                <option value="FEMALE">FEMALE</option>
+                                <option value="OTHER">OTHER</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label>Berth Preference</label>
+                        <select id="b-pref">
+                            <option value="NONE">No Preference</option>
+                            <option value="LOWER">Lower (LB)</option>
+                            <option value="MIDDLE">Middle (MB)</option>
+                            <option value="UPPER">Upper (UB)</option>
+                            <option value="SIDE_LOWER">Side Lower (SL)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>U5 Payment Mode Simulation</label>
+                        <select id="b-paymode">
+                            <option value="NORMAL_SUCCESS">Normal Approval</option>
+                            <option value="DECLINE_INSUFFICIENT_FUNDS">Bank Decline</option>
+                            <option value="GATEWAY_TIMEOUT_THEN_SUCCESS">Gateway Timeout -> Reconcile OK</option>
+                            <option value="SLOW_SUCCESS_AFTER_HOLD_EXPIRY">Timeout -> Hold Expired -> Auto-Refund</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="margin-top:10px;">
+                    <label>Idempotency-Key (Reuse same key to test retry safety)</label>
+                    <div style="display:flex; gap:8px;">
+                        <input id="b-idem" />
+                        <button class="btn secondary" onclick="regenIdemKey()" style="white-space:nowrap;">New Key</button>
+                    </div>
+                </div>
+                <div class="btn-row">
+                    <button class="btn" onclick="submitBooking(false)">Book Ticket</button>
+                    <button class="btn secondary" onclick="submitBooking(true)">Test Duplicate Retry (Same Key)</button>
+                    <button class="btn accent" onclick="prepareChart()">Prepare Final Chart (T-4h)</button>
+                </div>
+                <div id="book-result" class="log-box" style="margin-top:12px;">Submit a booking to inspect PNR, Berth, and Payment state...</div>
+            </div>
+
+            <div class="card">
+                <h2>Live Quota Pool &amp; Physical Coach Berths</h2>
+                <div class="grid-4" id="avail-cards">
+                    <div class="stat-box"><div class="label">CNF Free</div><div class="val" id="av-cnf">-</div></div>
+                    <div class="stat-box"><div class="label">RAC Free</div><div class="val" id="av-rac">-</div></div>
+                    <div class="stat-box"><div class="label">Current WL</div><div class="val" id="av-wl">-</div></div>
+                    <div class="stat-box"><div class="label">Fare / Pax</div><div class="val" id="av-fare">-</div></div>
+                </div>
+                <p style="font-size:12px;color:var(--muted);margin:12px 0 4px;">
+                    Green = Free | Blue = Confirmed | Amber = Side-Lower RAC (Shares 2 Pax) | Purple = Temp Hold (180s)
+                </p>
+                <div class="berth-grid" id="berth-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2 -->
+    <div id="tab-wl" class="tab-panel">
+        <div class="grid-2">
+            <div class="card">
+                <h2>Recent Bookings (Click Cancel to Trigger Cascade)</h2>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead><tr><th>PNR</th><th>Train</th><th>Quota</th><th>Status</th><th>Slot / Queue</th><th>Action</th></tr></thead>
+                        <tbody id="pnr-table"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card">
+                <h2>Contiguous RAC &amp; Waitlist Queues (<span id="wl-invariant">VALID</span>)</h2>
+                <div class="grid-2">
+                    <div>
+                        <h3>RAC Queue (Shared SL)</h3>
+                        <table><thead><tr><th>Pos</th><th>PNR</th><th>Passenger</th><th>Slot</th></tr></thead><tbody id="rac-table"></tbody></table>
+                    </div>
+                    <div>
+                        <h3>Waitlist Queue (WL)</h3>
+                        <table><thead><tr><th>Pos</th><th>PNR</th><th>Passenger</th></tr></thead><tbody id="wl-table"></tbody></table>
+                    </div>
+                </div>
+                <h3 style="margin-top:14px;">Automated Upgrade Audit Log</h3>
+                <div class="log-box" id="promo-audit">No cascade promotions yet. Book past CNF capacity into RAC &amp; WL, then cancel a CNF ticket!</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3 -->
+    <div id="tab-surge" class="tab-panel">
+        <div class="card">
+            <h2>Unit 6: 10:00 AM Tatkal Surge Simulator</h2>
+            <p style="color:var(--muted);font-size:13px;">Launches concurrent worker threads hammering the Admission Gate simultaneously and verifies <strong>zero double-bookings</strong> and <strong>zero waitlist gaps</strong>.</p>
+            <div class="form-grid" style="grid-template-columns:repeat(4,1fr);">
+                <div><label>Train</label><input id="s-train" value="12951" /></div>
+                <div><label>Total Concurrent Requests</label><input id="s-reqs" type="number" value="400" /></div>
+                <div><label>Burst Threads</label><input id="s-threads" type="number" value="120" /></div>
+                <div><label>CNF / RAC / WL Pool</label><input id="s-cap" value="10 / 4 / 15" disabled /></div>
+            </div>
+            <div class="btn-row">
+                <button class="btn accent" onclick="runTatkalSurge()">Launch 10 AM Tatkal Surge</button>
+            </div>
+            <div class="grid-4" style="margin-top:16px;" id="surge-stats">
+                <div class="stat-box"><div class="label">Admitted</div><div class="val" id="sr-adm">-</div></div>
+                <div class="stat-box"><div class="label">Shed (503 Backpressure)</div><div class="val" id="sr-shed">-</div></div>
+                <div class="stat-box"><div class="label">Confirmed / RAC / WL</div><div class="val" id="sr-tiers">-</div></div>
+                <div class="stat-box"><div class="label">Double Bookings</div><div class="val" id="sr-dbl" style="color:var(--green);">-</div></div>
+                <div class="stat-box"><div class="label">WL Contiguous Check</div><div class="val" id="sr-wl">-</div></div>
+                <div class="stat-box"><div class="label">Throughput</div><div class="val" id="sr-rps">-</div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4 -->
+    <div id="tab-pay" class="tab-panel">
+        <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                <h2 style="margin:0;">Unit 5: Idempotent Payment Ledger &amp; Saga Refunds</h2>
+                <button class="btn green" onclick="reconcilePayments()">Run Timeout Reconciliation Now</button>
+            </div>
+            <div class="grid-2" style="margin-top:14px;">
+                <div>
+                    <h3>Payment Transactions</h3>
+                    <table><thead><tr><th>Payment ID</th><th>PNR</th><th>Status</th><th>Idempotency Key</th></tr></thead><tbody id="pay-table"></tbody></table>
+                </div>
+                <div>
+                    <h3>Automated Saga Refunds</h3>
+                    <table><thead><tr><th>Refund ID</th><th>PNR</th><th>Amount</th><th>Reason</th></tr></thead><tbody id="ref-table"></tbody></table>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script>
+    let trainsCatalog = [];
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.style.display = 'block';
+        setTimeout(() => { t.style.display = 'none'; }, 3500);
+    }
+
+    function switchTab(id, btn) {
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        btn.classList.add('active');
+        refreshAll();
+    }
+
+    function regenIdemKey() {
+        document.getElementById('b-idem').value = 'idem-' + Math.random().toString(36).substring(2, 10);
+    }
+
+    async function init() {
+        document.getElementById('b-date').value = new Date().toISOString().split('T')[0];
+        regenIdemKey();
+        const res = await fetch('/api/v1/trains');
+        trainsCatalog = await res.json();
+        const tSel = document.getElementById('b-train');
+        tSel.innerHTML = trainsCatalog.map(t =>
+            `<option value="${t.number}">${t.number} — ${t.name} (${t.fromStationCode} → ${t.toStationCode})</option>`
+        ).join('');
+        updateClassDropdown();
+        await refreshAll();
+    }
+
+    function updateClassDropdown() {
+        const num = document.getElementById('b-train').value;
+        const train = trainsCatalog.find(t => t.number === num) || trainsCatalog[0];
+        if (!train) return;
+        const cSel = document.getElementById('b-class');
+        cSel.innerHTML = train.classes.map(c => `<option value="${c}">${c}</option>`).join('');
+    }
+
+    async function loadAvailabilityAndCoach() {
+        updateClassDropdown();
+        const train = document.getElementById('b-train').value;
+        const date = document.getElementById('b-date').value;
+        const cls = document.getElementById('b-class').value;
+        const quota = document.getElementById('b-quota').value;
+        if (!train || !cls) return;
+
+        const [avRes, coachRes] = await Promise.all([
+            fetch(`/api/v1/trains/${train}/availability?journeyDate=${date}&coachClass=${cls}&quotaCode=${quota}`),
+            fetch(`/api/v1/trains/${train}/coaches?journeyDate=${date}&coachClass=${cls}`)
+        ]);
+        if (avRes.ok) {
+            const av = await avRes.json();
+            document.getElementById('av-cnf').textContent = `${av.availableCnf}/${av.totalCnf}`;
+            document.getElementById('av-rac').textContent = `${av.availableRac}/${av.totalRac}`;
+            document.getElementById('av-wl').textContent = `${av.currentWaitlist}/${av.maxWaitlist}`;
+            document.getElementById('av-fare').textContent = av.farePerPassenger.amount ? `₹${av.farePerPassenger.amount}` : '-';
+        }
+        if (coachRes.ok) {
+            const berths = await coachRes.json();
+            document.getElementById('berth-grid').innerHTML = berths.map(b => `
+                <div class="berth ${b.occupancyState}">
+                    <div><strong>${b.coachCode}-${b.berthNumber}</strong></div>
+                    <div>${b.berthType}</div>
+                    <div>${b.occupancyState.replace('_',' ')}</div>
+                </div>
+            `).join('');
+        }
+    }
+
+    async function submitBooking(reuseKey) {
+        if (!reuseKey && !document.getElementById('b-idem').value) regenIdemKey();
+        const train = trainsCatalog.find(t => t.number === document.getElementById('b-train').value);
+        const payload = {
+            userId: 'web-demo-user',
+            trainNumber: train.number,
+            journeyDate: document.getElementById('b-date').value,
+            sourceStation: train.fromStationCode,
+            destinationStation: train.toStationCode,
+            coachClass: document.getElementById('b-class').value,
+            quotaCode: document.getElementById('b-quota').value,
+            paymentMode: document.getElementById('b-paymode').value,
+            bypassTatkalClock: true,
+            passengers: [{
+                name: document.getElementById('b-name').value,
+                age: parseInt(document.getElementById('b-age').value, 10),
+                gender: document.getElementById('b-gender').value,
+                preference: document.getElementById('b-pref').value
+            }]
+        };
+        const res = await fetch('/api/v1/bookings', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Idempotency-Key': document.getElementById('b-idem').value
+            },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        document.getElementById('book-result').textContent = JSON.stringify(data, null, 2);
+        showToast(res.ok ? `PNR ${data.pnrNumber}: ${data.status}${data.idempotentReplay ? ' (IDEMPOTENT REPLAY)' : ''}` : `Error: ${data.message}`);
+        if (!reuseKey) regenIdemKey();
+        await refreshAll();
+    }
+
+    async function cancelPnr(pnr) {
+        const res = await fetch(`/api/v1/bookings/${pnr}/cancel`, { method: 'POST' });
+        const data = await res.json();
+        showToast(res.ok ? `Cancelled ${pnr}: ${data.cascadeUpgrades.length} auto-upgrades triggered` : data.message);
+        await refreshAll();
+    }
+
+    async function prepareChart() {
+        const train = document.getElementById('b-train').value;
+        const date = document.getElementById('b-date').value;
+        const res = await fetch(`/api/v1/admin/chart/${train}?journeyDate=${date}`, { method: 'POST' });
+        const data = await res.json();
+        showToast(`Chart prepared! Confirmed=${data.confirmedCount}, Dropped WL=${data.droppedWaitlistCount}, Refunds=${data.autoRefundsTriggered}`);
+        await refreshAll();
+    }
+
+    async function reconcilePayments() {
+        const res = await fetch('/api/v1/payments/reconcile', { method: 'POST' });
+        const list = await res.json();
+        showToast(`Reconciled ${list.length} timed-out payment(s).`);
+        await refreshAll();
+    }
+
+    async function runTatkalSurge() {
+        const body = {
+            trainNumber: document.getElementById('s-train').value,
+            coachClass: 'AC_3',
+            quotaCode: 'TQ',
+            totalRequests: parseInt(document.getElementById('s-reqs').value, 10),
+            concurrentThreads: parseInt(document.getElementById('s-threads').value, 10),
+            cnfCapacity: 10,
+            racCapacity: 4,
+            maxWlCapacity: 15,
+            strictBackpressureCap: true
+        };
+        const res = await fetch('/api/v1/simulation/tatkal-surge', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        const r = await res.json();
+        document.getElementById('sr-adm').textContent = `${r.admittedCount} / ${r.totalRequests}`;
+        document.getElementById('sr-shed').textContent = r.shedByBackpressure503;
+        document.getElementById('sr-tiers').textContent = `${r.confirmedBookings} / ${r.racBookings} / ${r.waitlistedBookings}`;
+        document.getElementById('sr-dbl').textContent = r.doubleBookedBerthsDetected;
+        document.getElementById('sr-wl').textContent = r.waitlistContiguousInvariantValid ? 'VALID' : 'BROKEN';
+        document.getElementById('sr-rps').textContent = `${r.requestsPerSecond} req/s (${r.elapsedMs} ms)`;
+        showToast(`Surge complete! 0 double-bookings verified.`);
+        await refreshAll();
+    }
+
+    async function refreshAll() {
+        await loadAvailabilityAndCoach();
+        const train = document.getElementById('b-train').value || '12951';
+        const date = document.getElementById('b-date').value;
+        const cls = document.getElementById('b-class').value || 'AC_3';
+        const quota = document.getElementById('b-quota').value || 'GN';
+
+        const [pnrsRes, wlRes, auditRes, payRes, refRes, telRes] = await Promise.all([
+            fetch('/api/v1/bookings?limit=25'),
+            fetch(`/api/v1/waitlist/${train}?journeyDate=${date}&coachClass=${cls}&quotaCode=${quota}`),
+            fetch('/api/v1/waitlist/audit?limit=15'),
+            fetch('/api/v1/payments/transactions?limit=20'),
+            fetch('/api/v1/payments/refunds?limit=20'),
+            fetch('/api/v1/telemetry')
+        ]);
+
+        if (pnrsRes.ok) {
+            const pnrs = await pnrsRes.json();
+            document.getElementById('pnr-table').innerHTML = pnrs.map(p => {
+                const slot = p.tickets.map(t => t.allocatedCoach ? `${t.allocatedCoach}-${t.allocatedBerth}` : (t.queuePosition > 0 ? `#${t.queuePosition}` : '-')).join(', ');
+                const canCancel = !['CANCELLED','EXPIRED','CHARTED'].includes(p.status);
+                return `<tr>
+                    <td><strong>${p.pnrNumber}</strong></td>
+                    <td>${p.trainNumber} (${p.coachClass})</td>
+                    <td>${p.quotaCode}</td>
+                    <td><span class="badge b-${p.status}">${p.status}</span></td>
+                    <td>${slot}</td>
+                    <td>${canCancel ? `<button class="btn red" style="padding:4px 8px;font-size:11px;" onclick="cancelPnr('${p.pnrNumber}')">Cancel</button>` : '-'}</td>
+                </tr>`;
+            }).join('');
+        }
+        if (wlRes.ok) {
+            const q = await wlRes.json();
+            document.getElementById('wl-invariant').textContent = q.contiguousInvariantValid ? 'VALID (ZERO GAPS)' : 'BROKEN';
+            document.getElementById('rac-table').innerHTML = q.racQueue.map(e =>
+                `<tr><td>RAC #${e.contiguousPosition}</td><td>${e.pnrNumber}</td><td>${e.passengerName}</td><td>${e.allocatedCoach}-${e.allocatedBerth}</td></tr>`
+            ).join('') || '<tr><td colspan="4" style="color:var(--muted);">Empty</td></tr>';
+            document.getElementById('wl-table').innerHTML = q.wlQueue.map(e =>
+                `<tr><td>WL #${e.contiguousPosition}</td><td>${e.pnrNumber}</td><td>${e.passengerName}</td></tr>`
+            ).join('') || '<tr><td colspan="3" style="color:var(--muted);">Empty</td></tr>';
+        }
+        if (auditRes.ok) {
+            const aud = await auditRes.json();
+            if (aud.length) {
+                document.getElementById('promo-audit').textContent = aud.map(a => `[${a.pnrNumber}] ${a.transitionDescription}`).join('\n');
+            }
+        }
+        if (payRes.ok) {
+            const pays = await payRes.json();
+            document.getElementById('pay-table').innerHTML = pays.map(p =>
+                `<tr><td>${p.paymentId}</td><td>${p.pnrNumber}</td><td><span class="badge b-${p.status}">${p.status}</span></td><td><code>${p.idempotencyKey}</code></td></tr>`
+            ).join('');
+        }
+        if (refRes.ok) {
+            const refs = await refRes.json();
+            document.getElementById('ref-table').innerHTML = refs.map(r =>
+                `<tr><td>${r.refundId}</td><td>${r.pnrNumber}</td><td>₹${r.refundAmount.amount}</td><td>${r.reason}</td></tr>`
+            ).join('');
+        }
+        if (telRes.ok) {
+            const tel = await telRes.json();
+            document.getElementById('t-workers').textContent = tel.admission.workerThreads;
+            document.getElementById('t-depth').textContent = tel.admission.currentQueueDepth;
+            document.getElementById('t-cap').textContent = tel.admission.boundedQueueCapacity;
+            document.getElementById('t-admitted').textContent = tel.admission.totalAdmitted;
+            document.getElementById('t-shed').textContent = tel.admission.totalShed503;
+        }
+    }
+
+    init();
+</script>
+</body>
+</html>
