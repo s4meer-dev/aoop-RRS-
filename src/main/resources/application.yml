@@ -1,0 +1,38 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: railway-reservation-system
+  modulith:
+    detection-strategy: explicitly-annotated
+  threads:
+    virtual:
+      enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,modulith
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+rrs:
+  inventory:
+    seat-hold-ttl-seconds: 180
+    enforce-tatkal-window: false
+    coaches-per-class: 1
+    berths-per-coach: 24
+    rac-side-lower-slots-per-coach: 4
+    max-waitlist-limit: 20
+  admission:
+    bounded-queue-capacity: 120
+    worker-threads: 16
+    per-user-tokens-per-minute: 60
+    bulkhead-max-concurrent-calls: 32
+    queue-wait-timeout-ms: 1500
+  payment:
+    reconciliation-interval-ms: 5000
+    gateway-timeout-ms: 400
